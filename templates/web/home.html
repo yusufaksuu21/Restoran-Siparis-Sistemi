@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}KEBAPHAUSE RESTAURANT — Hoş Geldiniz{% endblock %}
+
+{% block content %}
+<!-- AUTH SECTION -->
+<section class="py-5" style="background: var(--cream); min-height: 100vh; display:flex; align-items:center;">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-md-10">
+        <div class="form-card fade-up" style="max-width: none;">
+
+          <!-- TABS -->
+          <div class="auth-tabs">
+            <button class="auth-tab active" onclick="showLogin()">Giriş Yap</button>
+            <button class="auth-tab" onclick="showRegister()">Kayıt Ol</button>
+          </div>
+
+          <!-- LOGIN FORM -->
+          <div id="login-form" class="auth-form-content">
+            <h2 class="form-card-title">Giriş Yap</h2>
+            <p class="form-card-subtitle">Hesabınıza giriş yapın</p>
+
+            <form method="post" action="{% url 'web:login' %}" novalidate>
+              {% csrf_token %}
+              {% include 'partials/_form_errors.html' with form=login_form %}
+              <div class="mb-3">
+                <label class="form-label">Kullanıcı Adı</label>
+                {{ login_form.username }}
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Şifre</label>
+                {{ login_form.password }}
+              </div>
+              <button type="submit" class="btn-gold w-100" style="border:none; cursor:pointer; font-size:0.95rem; padding:0.8rem;">
+                Giriş Yap
+              </button>
+            </form>
+          </div>
+
+          <!-- REGISTER FORM -->
+          <div id="register-form" class="auth-form-content" style="display: none;">
+            <h2 class="form-card-title">Kayıt Ol</h2>
+            <p class="form-card-subtitle">Yeni hesap oluşturun</p>
+
+            <form method="post" action="{% url 'web:register' %}" novalidate>
+              {% csrf_token %}
+              {% include 'partials/_form_errors.html' with form=register_form %}
+              <div class="mb-3">
+                <label class="form-label">Kullanıcı Adı</label>
+                {{ register_form.username }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label">E-posta</label>
+                {{ register_form.email }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Şifre</label>
+                {{ register_form.password1 }}
+              </div>
+              <div class="mb-4">
+                <label class="form-label">Şifre (Tekrar)</label>
+                {{ register_form.password2 }}
+              </div>
+              <button type="submit" class="btn-gold w-100" style="border:none; cursor:pointer; font-size:0.95rem; padding:0.8rem;">
+                Hesap Oluştur
+              </button>
+            </form>
+          </div>
+
+          <hr class="form-divider">
+          <div class="text-center">
+            <a href="{% url 'web:menu_list' %}?guest=1" class="btn-gold w-100" style="text-decoration: none; display: block; padding: 0.8rem; border: none; cursor: pointer; font-size: 0.95rem;">Kayıtsız Devam Et</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+function showLogin() {
+  document.getElementById('login-form').style.display = 'block';
+  document.getElementById('register-form').style.display = 'none';
+  document.querySelectorAll('.auth-tab')[0].classList.add('active');
+  document.querySelectorAll('.auth-tab')[1].classList.remove('active');
+}
+
+function showRegister() {
+  document.getElementById('login-form').style.display = 'none';
+  document.getElementById('register-form').style.display = 'block';
+  document.querySelectorAll('.auth-tab')[0].classList.remove('active');
+  document.querySelectorAll('.auth-tab')[1].classList.add('active');
+}
+</script>
+
+<!-- ÖZELLIKLER -->
+<section class="py-5" style="background: var(--cream-dark);">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-4 fade-up">
+        <div class="entry-card h-100">
+          <div class="entry-icon">🔥</div>
+          <h5 style="font-family:'Playfair Display',serif; font-weight:700; color:var(--navy);">Taze Malzeme</h5>
+          <p style="color:var(--text-light); font-size:0.9rem; margin:0;">Her gün taze hazırlanan malzemelerle geleneksel tarifler.</p>
+        </div>
+      </div>
+      <div class="col-md-4 fade-up fade-up-delay-1">
+        <div class="entry-card h-100">
+          <div class="entry-icon">⚡</div>
+          <h5 style="font-family:'Playfair Display',serif; font-weight:700; color:var(--navy);">Hızlı Sipariş</h5>
+          <p style="color:var(--text-light); font-size:0.9rem; margin:0;">QR kod ile masanızdan kolayca sipariş verin.</p>
+        </div>
+      </div>
+      <div class="col-md-4 fade-up fade-up-delay-2">
+        <div class="entry-card h-100">
+          <div class="entry-icon">🏆</div>
+          <h5 style="font-family:'Playfair Display',serif; font-weight:700; color:var(--navy);">Kalite Garanti</h5>
+          <p style="color:var(--text-light); font-size:0.9rem; margin:0;">Yıllarca süren deneyim ve mükemmellik anlayışı.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

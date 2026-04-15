@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Sipariş Yönetimi — KEBAPHAUSE{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+      <h1>📋 SİPARİŞ <span class="gold-accent">YÖNETİMİ</span></h1>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'web:kitchen' %}" class="btn-outline-gold" style="font-size:0.88rem; padding:0.5rem 1rem;">🍳 Mutfak</a>
+        <a href="{% url 'web:admin_tables' %}" class="btn-outline-gold" style="font-size:0.88rem; padding:0.5rem 1rem;">🪑 Masalar</a>
+        <a href="{% url 'web:admin_dashboard' %}" class="btn-white-outline" style="font-size:0.88rem; padding:0.5rem 1rem;">← Panel</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  <!-- FİLTRE -->
+  <div class="d-flex gap-2 flex-wrap mb-4">
+    <button onclick="filterOrders('all')" class="btn-gold" style="border:none; cursor:pointer; font-size:0.85rem; padding:0.5rem 1rem;">Tümü</button>
+    <button onclick="filterOrders('PENDING')" style="border:none; cursor:pointer; font-size:0.85rem; padding:0.5rem 1rem; background:#e74c3c; color:#fff; border-radius:6px; font-weight:600;">⏳ Beklemede</button>
+    <button onclick="filterOrders('CONFIRMED')" style="border:none; cursor:pointer; font-size:0.85rem; padding:0.5rem 1rem; background:#f39c12; color:#fff; border-radius:6px; font-weight:600;">✓ Onaylandı</button>
+    <button onclick="filterOrders('PREPARING')" style="border:none; cursor:pointer; font-size:0.85rem; padding:0.5rem 1rem; background:#3498db; color:#fff; border-radius:6px; font-weight:600;">🔄 Hazırlanıyor</button>
+    <button onclick="filterOrders('SERVED')" style="border:none; cursor:pointer; font-size:0.85rem; padding:0.5rem 1rem; background:#27ae60; color:#fff; border-radius:6px; font-weight:600;">✅ Teslim</button>
+  </div>
+
+  {% if orders %}
+  <div style="display:grid; gap:1rem;">
+    {% for order in orders %}
+    <div class="form-card order-item" data-status="{{ order.status }}"
+      style="border-left: 4px solid {% if order.status == 'PENDING' %}#e74c3c{% elif order.status == 'CONFIRMED' %}#f39c12{% elif order.status == 'PREPARING' %}#3498db{% elif order.status == 'SERVED' %}#27ae60{% else %}#95a5a6{% endif %}; padding:1.25rem;">
+
+      <!-- BAŞLIK -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+          <span style="font-weight:700; font-size:1rem; color:var(--navy);">Sipariş #{{ order.pk }}</span>
+          <span style="color:var(--text-light); font-size:0.85rem; margin-left:0.75rem;">{{ order.created_at|date:"d.m.Y H:i" }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          {% if order.table %}<span style="font-size:0.85rem; font-weight:600; color:var(--navy);">🪑 Masa {{ order.table.number }}</span>{% endif %}
+          <span style="font-size:0.85rem; font-weight:600; color:var(--navy);">📦 {{ order.get_order_type_display }}</span>
+          <span style="font-weight:700; color:var(--gold-dark);">{{ order.subtotal|floatformat:2 }} ₺</span>
+          <span style="font-weight:700; font-size:0.85rem; color:{% if order.status == 'PENDING' %}#e74c3c{% elif order.status == 'CONFIRMED' %}#f39c12{% elif order.status == 'PREPARING' %}#3498db{% elif order.status == 'SERVED' %}#27ae60{% else %}#95a5a6{% endif %};">
+            {{ order.get_status_display }}
+          </span>
+        </div>
+      </div>
+
+      <!-- ÜRÜNLER -->
+      <div style="background:var(--cream); border-radius:8px; padding:0.85rem; margin-bottom:1rem;">
+        {% for item in order.items.all %}
+        <div class="d-flex justify-content-between" style="font-size:0.9rem; padding:0.25rem 0; {% if not forloop.last %}border-bottom:1px solid var(--cream-dark);{% endif %}">
+          <span>{{ item.name_snapshot }} <span style="color:var(--text-light);">x{{ item.quantity }}</span></span>
+          <span style="font-weight:600;">{{ item.line_total|floatformat:2 }} ₺</span>
+        </div>
+        {% endfor %}
+        {% if order.note %}
+        <div style="margin-top:0.5rem; font-size:0.85rem; color:var(--text-light);">📝 {{ order.note }}</div>
+        {% endif %}
+      </div>
+
+      <!-- DURUM GÜNCELLE -->
+      {% if order.status != 'SERVED' and order.status != 'CANCELLED' %}
+      <form method="post" class="d-flex gap-2 flex-wrap">
+        {% csrf_token %}
+        <input type="hidden" name="order_id" value="{{ order.pk }}">
+        {% if order.status == 'PENDING' %}
+          <button type="submit" name="status" value="CONFIRMED" style="border:none; cursor:pointer; background:#f39c12; color:#fff; padding:0.5rem 1.1rem; border-radius:6px; font-weight:600; font-size:0.88rem;">✓ Onayla</button>
+        {% endif %}
+        {% if order.status == 'CONFIRMED' %}
+          <button type="submit" name="status" value="PREPARING" style="border:none; cursor:pointer; background:#3498db; color:#fff; padding:0.5rem 1.1rem; border-radius:6px; font-weight:600; font-size:0.88rem;">🔄 Hazırlanıyor</button>
+        {% endif %}
+        {% if order.status == 'PREPARING' %}
+          <button type="submit" name="status" value="SERVED" style="border:none; cursor:pointer; background:#27ae60; color:#fff; padding:0.5rem 1.1rem; border-radius:6px; font-weight:600; font-size:0.88rem;">✅ Teslim Edildi</button>
+        {% endif %}
+      </form>
+      {% else %}
+      <span style="font-size:0.85rem; color:var(--text-light);">Bu sipariş tamamlandı.</span>
+      {% endif %}
+
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="form-card text-center" style="padding:3rem;">
+    <div style="font-size:3rem; margin-bottom:1rem;">📋</div>
+    <p style="color:var(--text-light);">Henüz sipariş yok.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+function filterOrders(status) {
+  document.querySelectorAll('.order-item').forEach(el => {
+    el.style.display = (status === 'all' || el.dataset.status === status) ? 'block' : 'none';
+  });
+}
+</script>
+{% endblock %}

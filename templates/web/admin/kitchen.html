@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Mutfak Paneli — KEBAPHAUSE{% endblock %}
+
+{% block content %}
+<section style="background: var(--navy); min-height: 100vh; padding: 2rem 0;">
+  <div class="container">
+
+    <!-- BAŞLIK -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+      <h1 style="color: var(--white); margin:0; font-family:'Playfair Display',serif; font-size:1.8rem;">
+        🍳 Mutfak Paneli
+      </h1>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'web:admin_dashboard' %}" class="btn-white-outline" style="font-size:0.85rem; padding:0.5rem 1rem;">🏠 Yönetim</a>
+        <a href="{% url 'web:admin_orders' %}" class="btn-white-outline" style="font-size:0.85rem; padding:0.5rem 1rem;">📋 Siparişler</a>
+        <a href="{% url 'web:admin_tables' %}" class="btn-white-outline" style="font-size:0.85rem; padding:0.5rem 1rem;">🪑 Masalar</a>
+        <button onclick="location.reload()" class="btn-gold" style="border:none; cursor:pointer; padding:0.5rem 1.2rem; font-weight:700; font-size:0.85rem;">
+          🔄 Yenile
+        </button>
+      </div>
+    </div>
+
+    <!-- BİLDİRİM -->
+    {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+      <div style="background:var(--gold); color:var(--navy); padding:0.85rem 1rem; border-radius:8px; font-weight:600; margin-bottom:0.5rem;">
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- SİPARİŞ SAYISI -->
+    <div style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.85rem 1.25rem; margin-bottom:1.5rem; color:var(--white); font-size:0.9rem;">
+      📦 Aktif sipariş: <strong style="color:var(--gold);">{{ orders|length }}</strong>
+      {% if orders %} — Sayfa her 20 saniyede otomatik yenilenir.{% endif %}
+    </div>
+
+    {% if orders %}
+    <div class="row g-3">
+      {% for order in orders %}
+      <div class="col-lg-4 col-md-6">
+        <div style="background:var(--white); border-radius:12px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+
+          <!-- KART BAŞLIK -->
+          <div style="background:{% if order.status == 'PENDING' %}#e74c3c{% elif order.status == 'CONFIRMED' %}#f39c12{% else %}#3498db{% endif %}; padding:1rem 1.25rem; color:#fff;">
+            <div class="d-flex justify-content-between align-items-center">
+              <span style="font-weight:800; font-size:1.1rem;">Sipariş #{{ order.pk }}</span>
+              <span style="background:rgba(255,255,255,0.25); padding:0.2rem 0.75rem; border-radius:20px; font-size:0.78rem; font-weight:700;">
+                {{ order.get_status_display }}
+              </span>
+            </div>
+            <div style="font-size:0.82rem; opacity:0.88; margin-top:0.25rem;">
+              🕐 {{ order.created_at|date:"H:i" }}
+              {% if order.table %}
+                &nbsp;·&nbsp; 🪑 Masa {{ order.table.number }}
+              {% else %}
+                &nbsp;·&nbsp; 📍 {{ order.get_order_type_display }}
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- ÜRÜNLER -->
+          <div style="padding:1.25rem;">
+            <div style="background:var(--cream); border-radius:8px; padding:0.85rem; margin-bottom:1rem;">
+              <div style="font-size:0.75rem; font-weight:700; color:var(--text-light); letter-spacing:0.06em; margin-bottom:0.6rem;">ÜRÜNLER</div>
+              {% for item in order.items.all %}
+              <div class="d-flex justify-content-between" style="padding:0.35rem 0; font-size:0.9rem; {% if not forloop.last %}border-bottom:1px solid var(--cream-dark);{% endif %}">
+                <span style="font-weight:500;">{{ item.menu_item.name }}</span>
+                <span style="font-weight:700; color:var(--gold-dark);">x{{ item.quantity }}</span>
+              </div>
+              {% endfor %}
+            </div>
+
+            {% if order.note %}
+            <div style="background:#fff8ec; border-left:3px solid #f39c12; padding:0.65rem 0.85rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem; color:var(--text-mid);">
+              📝 {{ order.note }}
+            </div>
+            {% endif %}
+
+            <!-- TEK ADIM BUTON -->
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="order_id" value="{{ order.pk }}">
+
+              {% if order.status == 'PENDING' %}
+                <button type="submit" name="status" value="CONFIRMED"
+                  style="width:100%; border:none; cursor:pointer; background:#f39c12; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                  ✓ Onayla
+                </button>
+
+              {% elif order.status == 'CONFIRMED' %}
+                <button type="submit" name="status" value="PREPARING"
+                  style="width:100%; border:none; cursor:pointer; background:#3498db; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                  🔄 Hazırlanıyor
+                </button>
+
+              {% elif order.status == 'PREPARING' %}
+                <button type="submit" name="status" value="SERVED"
+                  style="width:100%; border:none; cursor:pointer; background:#27ae60; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                  ✅ Teslim Et
+                </button>
+              {% endif %}
+
+            </form>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <div style="text-align:center; padding:4rem 2rem; background:rgba(255,255,255,0.06); border-radius:12px; border:1px solid rgba(255,255,255,0.1);">
+      <div style="font-size:3.5rem; margin-bottom:1rem;">✅</div>
+      <p style="color:rgba(255,255,255,0.7); font-size:1.05rem; margin:0;">Bekleyen sipariş yok.</p>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+
+<script>
+setTimeout(function() { location.reload(); }, 20000);
+</script>
+{% endblock %}

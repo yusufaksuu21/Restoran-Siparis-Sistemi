@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Giriş Yap — KEBAPHAUSE{% endblock %}
+
+{% block content %}
+<div class="py-5" style="background: var(--cream); min-height: 80vh; display:flex; align-items:center;">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-5 col-md-7">
+        <div class="form-card fade-up">
+
+          <!-- TABS -->
+          <div class="auth-tabs">
+            <a href="{% url 'web:login' %}" class="auth-tab active">Giriş Yap</a>
+            <a href="{% url 'web:register' %}" class="auth-tab">Kayıt Ol</a>
+          </div>
+
+          <h2 class="form-card-title">Giriş Yap</h2>
+          <p class="form-card-subtitle">Hesabınıza giriş yapın</p>
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+            {% endif %}
+            {% include 'partials/_form_errors.html' with form=form %}
+            <div class="mb-3">
+              <label class="form-label">{{ form.username.label }}</label>
+              {{ form.username }}
+            </div>
+            <div class="mb-4">
+              <label class="form-label">{{ form.password.label }}</label>
+              {{ form.password }}
+            </div>
+            <button type="submit" class="btn-gold w-100" style="border:none; cursor:pointer; font-size:0.95rem; padding:0.8rem;">
+              Giriş Yap
+            </button>
+          </form>
+
+          <hr class="form-divider">
+          <div class="text-center">
+            <a href="{% url 'web:menu_list' %}?guest=1" style="color:var(--text-light); font-size:0.88rem; text-decoration:none;">
+              Hesap açmadan devam et →
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}Profil — KEBAPHAUSE{% endblock %}
+
+{% block content %}
+<section class="py-5" style="background: var(--cream); min-height: 100vh;">
+  <div class="container">
+    <h1 style="font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 2rem; color: var(--text-dark);">Profil</h1>
+
+    <div class="row g-4">
+      <!-- Profil Bilgileri -->
+      <div class="col-lg-12">
+        <div class="form-card">
+          <h2 class="form-card-title">Kişisel Bilgiler</h2>
+          
+          <div style="margin-bottom: 1.5rem;">
+            <label class="form-label">Kullanıcı Adı</label>
+            <div style="background: var(--cream-dark); padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-weight: 600;">
+              {{ user.username }}
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label class="form-label">E-posta</label>
+            <div style="background: var(--cream-dark); padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-weight: 600;">
+              {{ user.email }}
+            </div>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label class="form-label">Ad Soyad</label>
+            <div style="background: var(--cream-dark); padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-weight: 600;">
+              {{ user.first_name }} {{ user.last_name|default:"Belirtilmemiş" }}
+            </div>
+          </div>
+
+          <!-- Telefon Numarası Ekleme Formu -->
+          <div style="background: rgba(201, 168, 76, 0.08); border-left: 4px solid var(--gold); padding: 1rem; border-radius: var(--radius-sm); margin-top: 1.5rem;">
+            <p style="margin: 0 0 1rem; color: var(--text-light); font-size: 0.95rem; font-weight: 600;">Telefon Numaranızı Kaydedin</p>
+            <form method="post" style="display: flex; gap: 0.5rem;">
+              {% csrf_token %}
+              <input type="tel" name="phone" class="form-control" placeholder="+90 5XX XXX XXXX" style="flex: 1;" maxlength="20">
+              <button type="submit" class="btn-gold" style="border: none; cursor: pointer; font-weight: 600; padding: 0.7rem 1.5rem; white-space: nowrap;">
+                Kaydet
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Güvenlik & Ayarlar -->
+    <div class="row g-4 mt-4">
+      <div class="col-lg-12">
+        <div class="form-card">
+          <h2 class="form-card-title">Güvenlik & Ayarlar</h2>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <a href="{% url 'web:menu_list' %}" class="btn-gold" style="text-decoration: none; display: block; text-align: center; padding: 0.8rem; border-radius: var(--radius-sm); font-weight: 600;">
+              📋 Menüye Dön
+            </a>
+            <a href="{% url 'web:order_history' %}" class="btn-gold" style="text-decoration: none; display: block; text-align: center; padding: 0.8rem; border-radius: var(--radius-sm); font-weight: 600;">
+              📦 Siparişlerim
+            </a>
+            <a href="{% url 'web:logout' %}" class="btn-outline-gold" style="text-decoration: none; display: block; text-align: center; padding: 0.8rem; border-radius: var(--radius-sm); font-weight: 600;">
+              🚪 Çıkış Yap
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

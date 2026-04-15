@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Menü — KEBAP HOUSE{% endblock %}
+
+{% block content %}
+<div class="py-5 bg-dark text-white text-center mb-4">
+    <h1 class="display-4 fw-bold">KEBAP <span class="text-warning">HOUSE</span></h1>
+    <p class="lead">Lezzetin Tek Adresi</p>
+</div>
+
+<div class="container pb-5">
+    {% if demo_mode %}
+    <div class="alert alert-warning text-center mb-5">
+        <strong>DEMO MODU:</strong> Şu an örnek verileri görüyorsunuz. Admin panelinden ürün eklediğinizde bu kısım otomatik güncellenecektir.
+    </div>
+    {% endif %}
+
+    {% if categories %}
+        {% for category in categories %}
+        <div class="mb-5">
+            <h2 class="border-bottom pb-2 mb-4">{{ category.name }}</h2>
+            <div class="row g-4">
+                {% for item in category.items.all %}
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.name }}</h5>
+                            <p class="card-text text-muted">{{ item.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <span class="h5 mb-0 text-success">{{ item.price }} ₺</span>
+                                <form method="post" action="{% url 'web:cart' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="menu_item_id" value="{{ item.id }}">
+                                    <button type="submit" class="btn btn-warning btn-sm">Sepete Ekle</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+    {% elif demo_menu %}
+        {% for cat_name, items in demo_menu.items %}
+        <div class="mb-5">
+            <h2 class="text-warning border-bottom pb-2 mb-4">{{ cat_name }}</h2>
+            <div class="row g-4">
+                {% for item in items %}
+                <div class="col-md-4">
+                    <div class="card h-100 shadow-sm border-warning">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ item.name }}</h5>
+                            <p class="card-text">{{ item.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold">{{ item.price }} ₺</span>
+                                <form method="post" action="{% url 'web:cart' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="menu_item_id" value="{{ item.id }}">
+                                    <button type="submit" class="btn btn-warning btn-sm">Sepete Ekle</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

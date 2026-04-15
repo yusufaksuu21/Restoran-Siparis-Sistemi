@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Sepet — KEBAPHAUSE{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🛒 SEPETİM</h1>
+  </div>
+</div>
+
+<div class="container pb-5">
+  {% if cart_items %}
+  <div class="row g-4">
+
+    <!-- ÜRÜN LİSTESİ -->
+    <div class="col-lg-8">
+      <div class="cart-table">
+        <table class="table table-hover mb-0">
+          <thead>
+            <tr>
+              <th>Ürün</th>
+              <th class="text-center">Adet</th>
+              <th class="text-end">Fiyat</th>
+              <th class="text-end">Toplam</th>
+              <th class="text-center">Sil</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in cart_items %}
+            <tr>
+              <td>
+                <div style="font-weight:600; color:var(--navy);">{{ item.menu_item.name }}</div>
+                <div style="font-size:0.8rem; color:var(--text-light);">{{ item.menu_item.description|truncatewords:6 }}</div>
+              </td>
+              <td class="text-center">
+                <span style="background:var(--cream-dark); padding:2px 12px; border-radius:20px; font-weight:600;">{{ item.quantity }}</span>
+              </td>
+              <td class="text-end">{{ item.menu_item.price|floatformat:2 }} ₺</td>
+              <td class="text-end" style="font-weight:600;">{{ item.subtotal|floatformat:2 }} ₺</td>
+              <td class="text-center">
+                <form method="post" action="{% url 'web:cart' %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="remove">
+                  <input type="hidden" name="item_id" value="{{ item.pk }}">
+                  <button type="submit" style="background:none; border:none; cursor:pointer; color:#e74c3c; font-size:1.1rem;" title="Kaldır">🗑</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="cart-total-row">
+              <td colspan="3" class="text-end">Genel Toplam</td>
+              <td class="text-end" style="color:var(--gold-dark); font-size:1.1rem;">{{ total|floatformat:2 }} ₺</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="mt-3">
+        <a href="{% url 'web:menu_list' %}" style="color:var(--text-light); font-size:0.9rem; text-decoration:none;">
+          ← Menüye Dön
+        </a>
+      </div>
+    </div>
+
+    <!-- ÖZET + BUTONLAR -->
+    <div class="col-lg-4">
+      <div class="form-card">
+        <h5 style="font-family:'Playfair Display',serif; font-weight:700; color:var(--navy); margin-bottom:1.25rem;">
+          Sipariş Özeti
+        </h5>
+        <div class="d-flex justify-content-between mb-2" style="font-size:0.9rem; color:var(--text-light);">
+          <span>Ara Toplam</span>
+          <span>{{ total|floatformat:2 }} ₺</span>
+        </div>
+        <div class="d-flex justify-content-between mb-3" style="font-size:0.9rem; color:var(--text-light);">
+          <span>Servis</span>
+          <span style="color:green;">Ücretsiz</span>
+        </div>
+        <hr style="border-color:var(--cream-dark);">
+        <div class="d-flex justify-content-between mb-4" style="font-weight:700; font-size:1.05rem;">
+          <span>Toplam</span>
+          <span style="color:var(--gold-dark);">{{ total|floatformat:2 }} ₺</span>
+        </div>
+
+        <!-- SİPARİŞİ ONAYLA -->
+        <a href="{% url 'web:checkout' %}" class="btn-gold w-100 text-center" style="padding:0.85rem; font-size:0.95rem; display:block; margin-bottom:0.75rem;">
+          ✓ Siparişi Onayla
+        </a>
+
+        <!-- SİPARİŞİ İPTAL ET -->
+        <form method="post" action="{% url 'web:cart' %}" onsubmit="return confirm('Sepeti iptal etmek istediğinize emin misiniz?');">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="clear">
+          <button type="submit" style="width:100%; background:none; border:1.5px solid #e74c3c; color:#e74c3c; padding:0.8rem; border-radius:8px; cursor:pointer; font-size:0.92rem; font-weight:600;">
+            ✕ Siparişi İptal Et
+          </button>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+
+  {% else %}
+  <div class="text-center py-5">
+    <div style="font-size:5rem; margin-bottom:1.5rem;">🛒</div>
+    <h4 style="color:var(--navy); font-family:'Playfair Display',serif;">Sepetiniz Boş</h4>
+    <p style="color:var(--text-light); margin-bottom:2rem;">Menüden ürün ekleyin ve sipariş verin.</p>
+    <a href="{% url 'web:menu_list' %}" class="btn-gold">Menüye Git</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

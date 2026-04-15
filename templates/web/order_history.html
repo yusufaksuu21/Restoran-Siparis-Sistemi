@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% block title %}Sipariş Geçmişi — KEBAPHAUSE{% endblock %}
+
+{% block content %}
+<section class="py-5" style="background: var(--cream); min-height: 100vh;">
+  <div class="container">
+    <h1 style="font-family: 'Playfair Display', serif; font-size: 2.5rem; margin-bottom: 2rem; color: var(--text-dark);">Sipariş Geçmişi</h1>
+
+    {% if orders %}
+    <div style="display: grid; gap: 1.5rem;">
+      {% for order in orders %}
+      <div class="form-card" style="border-left: 4px solid 
+        {% if order.status == 'PENDING' %}#e74c3c
+        {% elif order.status == 'CONFIRMED' %}#f39c12
+        {% elif order.status == 'PREPARING' %}#3498db
+        {% elif order.status == 'SERVED' %}#27ae60
+        {% elif order.status == 'CANCELLED' %}#7f8c8d
+        {% else %}#bdc3c7{% endif %};">
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+          <!-- Sipariş Numarası -->
+          <div>
+            <span style="color: var(--text-light); font-size: 0.85rem; font-weight: 600;">SİPARİŞ NO</span>
+            <p style="margin: 0.5rem 0 0; font-size: 1.5rem; font-weight: 700; color: var(--gold);">#{{ order.pk }}</p>
+          </div>
+
+          <!-- Tarih -->
+          <div>
+            <span style="color: var(--text-light); font-size: 0.85rem; font-weight: 600;">TARİH</span>
+            <p style="margin: 0.5rem 0 0; font-weight: 600;">{{ order.created_at|date:"d.m.Y H:i" }}</p>
+          </div>
+
+          <!-- Tutar -->
+          <div>
+            <span style="color: var(--text-light); font-size: 0.85rem; font-weight: 600;">TOPLAM</span>
+            <p style="margin: 0.5rem 0 0; font-size: 1.3rem; font-weight: 700; color: var(--gold);">{{ order.subtotal|floatformat:2 }}₺</p>
+          </div>
+
+          <!-- Durum -->
+          <div>
+            <span style="color: var(--text-light); font-size: 0.85rem; font-weight: 600;">DURUM</span>
+            <p style="margin: 0.5rem 0 0; font-weight: 700; color: 
+              {% if order.status == 'PENDING' %}#e74c3c
+              {% elif order.status == 'CONFIRMED' %}#f39c12
+              {% elif order.status == 'PREPARING' %}#3498db
+              {% elif order.status == 'SERVED' %}#27ae60
+              {% elif order.status == 'CANCELLED' %}#7f8c8d
+              {% else %}#95a5a6{% endif %};">
+              {{ order.get_status_display }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div style="margin-bottom: 1.5rem;">
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+            <div style="text-align: center;">
+              <div style="width: 100%; height: 4px; background: {% if order.status in 'PENDING,CONFIRMED,PREPARING,SERVED' %}var(--gold){% else %}#ecf0f1{% endif %}; border-radius: 2px; margin-bottom: 0.5rem;"></div>
+              <span style="font-size: 0.75rem; color: var(--text-light); font-weight: 500;">Beklemede</span>
+            </div>
+            <div style="text-align: center;">
+              <div style="width: 100%; height: 4px; background: {% if order.status in 'CONFIRMED,PREPARING,SERVED' %}var(--gold){% else %}#ecf0f1{% endif %}; border-radius: 2px; margin-bottom: 0.5rem;"></div>
+              <span style="font-size: 0.75rem; color: var(--text-light); font-weight: 500;">Onaylandı</span>
+            </div>
+            <div style="text-align: center;">
+              <div style="width: 100%; height: 4px; background: {% if order.status in 'PREPARING,SERVED' %}var(--gold){% else %}#ecf0f1{% endif %}; border-radius: 2px; margin-bottom: 0.5rem;"></div>
+              <span style="font-size: 0.75rem; color: var(--text-light); font-weight: 500;">Hazırlanıyor</span>
+            </div>
+            <div style="text-align: center;">
+              <div style="width: 100%; height: 4px; background: {% if order.status == 'SERVED' %}var(--gold){% else %}#ecf0f1{% endif %}; border-radius: 2px; margin-bottom: 0.5rem;"></div>
+              <span style="font-size: 0.75rem; color: var(--text-light); font-weight: 500;">Servis</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ürünler -->
+        <div style="background: var(--cream-dark); padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem;">
+          <p style="margin: 0 0 0.75rem; color: var(--text-light); font-size: 0.85rem; font-weight: 600;">ÜRÜNLER</p>
+          <div style="display: grid; gap: 0.5rem;">
+            {% for item in order.items.all %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.05);">
+              <div>
+                <span style="font-weight: 500;">{{ item.name_snapshot }}</span>
+                <span style="color: var(--text-light); font-size: 0.85rem; margin-left: 0.5rem;">x{{ item.quantity }}</span>
+              </div>
+              <span style="font-weight: 600;">{{ item.line_total|floatformat:2 }}₺</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Özel Bilgiler -->
+        {% if order.order_type != 'DINE_IN' or order.note %}
+        <div style="display: grid; gap: 1rem; padding: 1rem; background: rgba(201, 168, 76, 0.05); border-radius: var(--radius-sm);">
+          {% if order.order_type != 'DINE_IN' %}
+          <div>
+            <span style="color: var(--text-light); font-size: 0.85rem; font-weight: 600;">SİPARİŞ TÜRü</span>
+            <p style="margin: 0.25rem 0 0; font-weight: 600;">{{ order.get_order_type_display }}</p>
+          </div>
+          {% endif %}
+          
+          {% if order.delivery_address %}
+          <div>
+            <span style="color: var(--text-light); font-size: 0.85rem; font-weight: 600;">TESLİMAT ADRESİ</span>
+            <p style="margin: 0.25rem 0 0;">{{ order.delivery_address }}</p>
+          </div>
+          {% endif %}
+          
+          {% if order.note %}
+          <div>
+            <span style="color: var(--text-light); font-size: 0.85rem; font-weight: 600;">NOTA</span>
+            <p style="margin: 0.25rem 0 0;">{{ order.note }}</p>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="form-card" style="text-align: center; padding: 3rem;">
+      <p style="color: var(--text-light); font-size: 1.1rem; margin: 0;">Henüz siparişiniz yok.</p>
+      <a href="{% url 'web:menu_list' %}" class="btn-gold" style="display: inline-block; margin-top: 1.5rem; text-decoration: none; padding: 0.8rem 2rem; border-radius: var(--radius-sm);">
+        Şimdi Sipariş Ver
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+// Sayfayı her 30 saniyede otomatik yenile
+setInterval(function() {
+  fetch(window.location.href)
+    .then(response => response.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const newDoc = parser.parseFromString(html, 'text/html');
+      const newContent = newDoc.querySelector('section');
+      if (newContent) {
+        document.querySelector('section').innerHTML = newContent.innerHTML;
+      }
+    });
+}, 30000);
+</script>
+{% endblock %}
