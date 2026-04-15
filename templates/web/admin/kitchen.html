@@ -37,77 +37,168 @@
       {% if orders %} — Sayfa her 20 saniyede otomatik yenilenir.{% endif %}
     </div>
 
-    {% if orders %}
+    {% if table_orders or other_orders %}
     <div class="row g-3">
-      {% for order in orders %}
-      <div class="col-lg-4 col-md-6">
-        <div style="background:var(--white); border-radius:12px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
-
-          <!-- KART BAŞLIK -->
-          <div style="background:{% if order.status == 'PENDING' %}#e74c3c{% elif order.status == 'CONFIRMED' %}#f39c12{% else %}#3498db{% endif %}; padding:1rem 1.25rem; color:#fff;">
-            <div class="d-flex justify-content-between align-items-center">
-              <span style="font-weight:800; font-size:1.1rem;">Sipariş #{{ order.pk }}</span>
-              <span style="background:rgba(255,255,255,0.25); padding:0.2rem 0.75rem; border-radius:20px; font-size:0.78rem; font-weight:700;">
-                {{ order.get_status_display }}
-              </span>
-            </div>
-            <div style="font-size:0.82rem; opacity:0.88; margin-top:0.25rem;">
-              🕐 {{ order.created_at|date:"H:i" }}
-              {% if order.table %}
-                &nbsp;·&nbsp; 🪑 Masa {{ order.table.number }}
-              {% else %}
-                &nbsp;·&nbsp; 📍 {{ order.get_order_type_display }}
-              {% endif %}
-            </div>
+      <!-- MASA BAZLI SİPARİŞLER -->
+      {% for table_id, table_data in table_orders.items %}
+      <div class="col-12">
+        <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:1.25rem; margin-bottom:1rem;">
+          <div style="color:var(--gold); font-weight:800; font-size:1.1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+            🪑 Masa {{ table_data.table.number }}
+            {% if table_data.table.name %}({{ table_data.table.name }}){% endif %}
+            <span style="background:#e74c3c; color:#fff; padding:0.2rem 0.6rem; border-radius:12px; font-size:0.7rem; font-weight:700;">
+              DOLU
+            </span>
           </div>
 
-          <!-- ÜRÜNLER -->
-          <div style="padding:1.25rem;">
-            <div style="background:var(--cream); border-radius:8px; padding:0.85rem; margin-bottom:1rem;">
-              <div style="font-size:0.75rem; font-weight:700; color:var(--text-light); letter-spacing:0.06em; margin-bottom:0.6rem;">ÜRÜNLER</div>
-              {% for item in order.items.all %}
-              <div class="d-flex justify-content-between" style="padding:0.35rem 0; font-size:0.9rem; {% if not forloop.last %}border-bottom:1px solid var(--cream-dark);{% endif %}">
-                <span style="font-weight:500;">{{ item.menu_item.name }}</span>
-                <span style="font-weight:700; color:var(--gold-dark);">x{{ item.quantity }}</span>
+          <div class="row g-3">
+            {% for order in table_data.orders %}
+            <div class="col-lg-6 col-xl-4">
+              <div style="background:var(--white); border-radius:12px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+
+                <!-- KART BAŞLIK -->
+                <div style="background:{% if order.status == 'PENDING' %}#e74c3c{% elif order.status == 'CONFIRMED' %}#f39c12{% else %}#3498db{% endif %}; padding:1rem 1.25rem; color:#fff;">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span style="font-weight:800; font-size:1.1rem;">Sipariş #{{ order.pk }}</span>
+                    <span style="background:rgba(255,255,255,0.25); padding:0.2rem 0.75rem; border-radius:20px; font-size:0.78rem; font-weight:700;">
+                      {{ order.get_status_display }}
+                    </span>
+                  </div>
+                  <div style="font-size:0.82rem; opacity:0.88; margin-top:0.25rem;">
+                    🕐 {{ order.created_at|date:"H:i" }}
+                  </div>
+                </div>
+
+                <!-- ÜRÜNLER -->
+                <div style="padding:1.25rem;">
+                  <div style="background:var(--cream); border-radius:8px; padding:0.85rem; margin-bottom:1rem;">
+                    <div style="font-size:0.75rem; font-weight:700; color:var(--text-light); letter-spacing:0.06em; margin-bottom:0.6rem;">ÜRÜNLER</div>
+                    {% for item in order.items.all %}
+                    <div class="d-flex justify-content-between" style="padding:0.35rem 0; font-size:0.9rem; {% if not forloop.last %}border-bottom:1px solid var(--cream-dark);{% endif %}">
+                      <span style="font-weight:500;">{{ item.menu_item.name }}</span>
+                      <span style="font-weight:700; color:var(--gold-dark);">x{{ item.quantity }}</span>
+                    </div>
+                    {% endfor %}
+                  </div>
+
+                  {% if order.note %}
+                  <div style="background:#fff8ec; border-left:3px solid #f39c12; padding:0.65rem 0.85rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem; color:var(--text-mid);">
+                    📝 {{ order.note }}
+                  </div>
+                  {% endif %}
+
+                  <!-- TEK ADIM BUTON -->
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="order_id" value="{{ order.pk }}">
+
+                    {% if order.status == 'PENDING' %}
+                      <button type="submit" name="status" value="CONFIRMED"
+                        style="width:100%; border:none; cursor:pointer; background:#f39c12; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                        ✓ Onayla
+                      </button>
+
+                    {% elif order.status == 'CONFIRMED' %}
+                      <button type="submit" name="status" value="PREPARING"
+                        style="width:100%; border:none; cursor:pointer; background:#3498db; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                        🔄 Hazırlanıyor
+                      </button>
+
+                    {% elif order.status == 'PREPARING' %}
+                      <button type="submit" name="status" value="SERVED"
+                        style="width:100%; border:none; cursor:pointer; background:#27ae60; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                        ✅ Teslim Et
+                      </button>
+                    {% endif %}
+
+                  </form>
+                </div>
               </div>
-              {% endfor %}
             </div>
-
-            {% if order.note %}
-            <div style="background:#fff8ec; border-left:3px solid #f39c12; padding:0.65rem 0.85rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem; color:var(--text-mid);">
-              📝 {{ order.note }}
-            </div>
-            {% endif %}
-
-            <!-- TEK ADIM BUTON -->
-            <form method="post">
-              {% csrf_token %}
-              <input type="hidden" name="order_id" value="{{ order.pk }}">
-
-              {% if order.status == 'PENDING' %}
-                <button type="submit" name="status" value="CONFIRMED"
-                  style="width:100%; border:none; cursor:pointer; background:#f39c12; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
-                  ✓ Onayla
-                </button>
-
-              {% elif order.status == 'CONFIRMED' %}
-                <button type="submit" name="status" value="PREPARING"
-                  style="width:100%; border:none; cursor:pointer; background:#3498db; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
-                  🔄 Hazırlanıyor
-                </button>
-
-              {% elif order.status == 'PREPARING' %}
-                <button type="submit" name="status" value="SERVED"
-                  style="width:100%; border:none; cursor:pointer; background:#27ae60; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
-                  ✅ Teslim Et
-                </button>
-              {% endif %}
-
-            </form>
+            {% endfor %}
           </div>
         </div>
       </div>
       {% endfor %}
+
+      <!-- DİĞER SİPARİŞLER (PAKET/ADRESE) -->
+      {% if other_orders %}
+      <div class="col-12">
+        <div style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:12px; padding:1.25rem; margin-bottom:1rem;">
+          <div style="color:var(--gold); font-weight:800; font-size:1.1rem; margin-bottom:1rem;">
+            📦 Paket / Adrese Siparişler
+          </div>
+
+          <div class="row g-3">
+            {% for order in other_orders %}
+            <div class="col-lg-4 col-md-6">
+              <div style="background:var(--white); border-radius:12px; overflow:hidden; box-shadow:0 8px 24px rgba(0,0,0,0.3);">
+
+                <!-- KART BAŞLIK -->
+                <div style="background:{% if order.status == 'PENDING' %}#e74c3c{% elif order.status == 'CONFIRMED' %}#f39c12{% else %}#3498db{% endif %}; padding:1rem 1.25rem; color:#fff;">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <span style="font-weight:800; font-size:1.1rem;">Sipariş #{{ order.pk }}</span>
+                    <span style="background:rgba(255,255,255,0.25); padding:0.2rem 0.75rem; border-radius:20px; font-size:0.78rem; font-weight:700;">
+                      {{ order.get_status_display }}
+                    </span>
+                  </div>
+                  <div style="font-size:0.82rem; opacity:0.88; margin-top:0.25rem;">
+                    🕐 {{ order.created_at|date:"H:i" }} &nbsp;·&nbsp; 📍 {{ order.get_order_type_display }}
+                  </div>
+                </div>
+
+                <!-- ÜRÜNLER -->
+                <div style="padding:1.25rem;">
+                  <div style="background:var(--cream); border-radius:8px; padding:0.85rem; margin-bottom:1rem;">
+                    <div style="font-size:0.75rem; font-weight:700; color:var(--text-light); letter-spacing:0.06em; margin-bottom:0.6rem;">ÜRÜNLER</div>
+                    {% for item in order.items.all %}
+                    <div class="d-flex justify-content-between" style="padding:0.35rem 0; font-size:0.9rem; {% if not forloop.last %}border-bottom:1px solid var(--cream-dark);{% endif %}">
+                      <span style="font-weight:500;">{{ item.menu_item.name }}</span>
+                      <span style="font-weight:700; color:var(--gold-dark);">x{{ item.quantity }}</span>
+                    </div>
+                    {% endfor %}
+                  </div>
+
+                  {% if order.note %}
+                  <div style="background:#fff8ec; border-left:3px solid #f39c12; padding:0.65rem 0.85rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem; color:var(--text-mid);">
+                    📝 {{ order.note }}
+                  </div>
+                  {% endif %}
+
+                  <!-- TEK ADIM BUTON -->
+                  <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="order_id" value="{{ order.pk }}">
+
+                    {% if order.status == 'PENDING' %}
+                      <button type="submit" name="status" value="CONFIRMED"
+                        style="width:100%; border:none; cursor:pointer; background:#f39c12; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                        ✓ Onayla
+                      </button>
+
+                    {% elif order.status == 'CONFIRMED' %}
+                      <button type="submit" name="status" value="PREPARING"
+                        style="width:100%; border:none; cursor:pointer; background:#3498db; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                        🔄 Hazırlanıyor
+                      </button>
+
+                    {% elif order.status == 'PREPARING' %}
+                      <button type="submit" name="status" value="SERVED"
+                        style="width:100%; border:none; cursor:pointer; background:#27ae60; color:#fff; padding:0.75rem; border-radius:8px; font-weight:700; font-size:0.95rem;">
+                        ✅ Teslim Et
+                      </button>
+                    {% endif %}
+
+                  </form>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
     </div>
 
     {% else %}

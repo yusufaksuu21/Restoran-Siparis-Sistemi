@@ -39,6 +39,31 @@
           {{ table.get_status_display }}
         </div>
 
+        <!-- AKTİF SİPARİŞLER -->
+        {% if table.status == 'OCCUPIED' %}
+        <div style="background:#fef0ef; border:1px solid #fadbd8; border-radius:8px; padding:0.75rem; margin-bottom:1rem;">
+          <div style="font-size:0.75rem; font-weight:700; color:#e74c3c; letter-spacing:0.06em; margin-bottom:0.5rem;">📋 AKTİF SİPARİŞLER</div>
+          {% for order in table.orders.all %}
+            {% if order.status in 'PENDING,CONFIRMED,PREPARING' %}
+            <div style="font-size:0.8rem; color:#c0392b; margin-bottom:0.25rem;">
+              #{{ order.pk }} — {{ order.get_status_display }}
+            </div>
+            {% endif %}
+          {% endfor %}
+          
+          <!-- MASA BOŞALTMA BUTONU -->
+          {% if not table.orders.filter(status__in='PENDING,CONFIRMED,PREPARING').exists %}
+          <form method="post" action="{% url 'web:table_clear' table.id %}" style="margin-top:0.75rem;">
+            {% csrf_token %}
+            <button type="submit" style="width:100%; border:1px solid #e74c3c; background:#fff; color:#e74c3c; padding:0.5rem; border-radius:6px; font-size:0.8rem; font-weight:600; cursor:pointer;" 
+                    onclick="return confirm('Bu masayı boşaltmak istediğinizden emin misiniz?')">
+              🆓 Masayı Boşalt
+            </button>
+          </form>
+          {% endif %}
+        </div>
+        {% endif %}
+
         <!-- KAPASİTE -->
         <div style="color:var(--text-light); font-size:0.85rem; margin-bottom:1rem;">
           👥 {{ table.capacity }} Kişilik

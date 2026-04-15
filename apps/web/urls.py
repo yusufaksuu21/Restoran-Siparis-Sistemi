@@ -18,5 +18,6 @@ urlpatterns = [
     path("yonetim/", views.admin_dashboard_view, name="admin_dashboard"),
     path("yonetim/siparisler/", views.order_management_view, name="admin_orders"),
     path("yonetim/masalar/", views.table_management_view, name="admin_tables"),
+    path("yonetim/masalar/<int:table_id>/bosalt/", views.table_clear_view, name="table_clear"),
     path("mutfak/", views.kitchen_view, name="kitchen"),
 ]

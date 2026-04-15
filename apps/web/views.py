@@ -227,6 +227,17 @@ def order_management_view(request):
                 if order.status not in [Order.Status.SERVED, Order.Status.CANCELLED]:
                     order.status = new_status
                     order.save(update_fields=["status"])
+                    
+                    # Sipariş servis edildiğinde masa durumunu kontrol et
+                    if new_status == Order.Status.SERVED and order.table:
+                        # Masanın başka aktif siparişi var mı kontrol et
+                        active_orders = order.table.orders.filter(
+                            status__in=[Order.Status.PENDING, Order.Status.CONFIRMED, Order.Status.PREPARING]
+                        ).exclude(id=order.id)
+                        if not active_orders.exists():
+                            order.table.status = Table.Status.AVAILABLE
+                            order.table.save(update_fields=["status"])
+                    
                     messages.success(request, f"Sipariş #{order.pk} güncellendi.")
                 else:
                     messages.error(request, "Bu siparişin durumu değiştirilemiyor.")
@@ -239,10 +250,14 @@ def order_management_view(request):
 
 
 @user_passes_test(lambda u: u.is_staff)
-def table_management_view(request):
+def table_clear_view(request, table_id):
     from apps.tables.models import Table
-    tables = Table.objects.all()
-    return render(request, "web/admin_tables.html", {"tables": tables})
+    if request.method == "POST":
+        table = get_object_or_404(Table, id=table_id)
+        table.status = Table.Status.AVAILABLE
+        table.save(update_fields=["status"])
+        messages.success(request, f"Masa {table.number} boşaltıldı.")
+    return redirect("web:admin_tables")
 
 
 @login_required
@@ -277,6 +292,10 @@ def checkout_view(request):
             if table:
                 order.table = table
                 order.save(update_fields=["table"])
+                # Masa durumunu dolu olarak işaretle
+                if table.status == Table.Status.AVAILABLE:
+                    table.status = Table.Status.OCCUPIED
+                    table.save(update_fields=["status"])
             messages.success(request, "Siparişiniz alındı!")
             return redirect("web:order_history")
         except ValueError as e:
@@ -289,10 +308,30 @@ def checkout_view(request):
 @user_passes_test(lambda u: u.is_staff)
 def kitchen_view(request):
     from apps.orders.models import Order
+    from apps.tables.models import Table
 
     orders = Order.objects.filter(
         status__in=[Order.Status.PENDING, Order.Status.CONFIRMED, Order.Status.PREPARING]
     ).prefetch_related("items__menu_item").order_by("created_at")
+
+    # Masa bazlı sipariş gruplandırması
+    table_orders = {}
+    other_orders = []
+
+    for order in orders:
+        if order.table:
+            table_id = order.table.id
+            if table_id not in table_orders:
+                table_orders[table_id] = {
+                    'table': order.table,
+                    'orders': []
+                }
+            table_orders[table_id]['orders'].append(order)
+        else:
+            other_orders.append(order)
+
+    # Tüm masaları al (sipariş olsun olmasın)
+    all_tables = Table.objects.prefetch_related('orders').all()
 
     if request.method == "POST":
         order_id = request.POST.get("order_id")
@@ -305,4 +344,9 @@ def kitchen_view(request):
                 messages.success(request, f"Sipariş #{order.pk} → {order.get_status_display()}")
         return redirect("web:kitchen")
 
-    return render(request, "web/admin/kitchen.html", {"orders": orders})
+    return render(request, "web/admin/kitchen.html", {
+        "table_orders": table_orders,
+        "other_orders": other_orders,
+        "all_tables": all_tables,
+        "orders": orders
+    })
