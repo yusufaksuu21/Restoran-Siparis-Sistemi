@@ -33,26 +33,32 @@
         {% endif %}
 
         <!-- DURUM -->
-        <div style="display:inline-block; padding:0.3rem 0.9rem; border-radius:20px; font-size:0.8rem; font-weight:700; margin-bottom:0.75rem;
+        <div style="display:inline-block; padding:0.35rem 1rem; border-radius:20px; font-size:0.82rem; font-weight:700; margin-bottom:0.75rem;
           background:{% if table.status == 'AVAILABLE' %}#e8f8f0{% elif table.status == 'OCCUPIED' %}#fef0ef{% elif table.status == 'RESERVED' %}#fef9ec{% else %}#f0f0f0{% endif %};
           color:{% if table.status == 'AVAILABLE' %}#27ae60{% elif table.status == 'OCCUPIED' %}#e74c3c{% elif table.status == 'RESERVED' %}#f39c12{% else %}#95a5a6{% endif %};">
           {{ table.get_status_display }}
         </div>
 
+        <a href="{% url 'web:admin_table_detail' table.id %}" class="btn-outline-gold" style="display:inline-block; text-decoration:none; padding:0.5rem 0.9rem; border-radius:8px; font-size:0.85rem; margin-bottom:1rem;">
+          Detayları Gör
+        </a>
+
         <!-- AKTİF SİPARİŞLER -->
-        {% if table.status == 'OCCUPIED' %}
+        {% if table.has_active_orders %}
         <div style="background:#fef0ef; border:1px solid #fadbd8; border-radius:8px; padding:0.75rem; margin-bottom:1rem;">
           <div style="font-size:0.75rem; font-weight:700; color:#e74c3c; letter-spacing:0.06em; margin-bottom:0.5rem;">📋 AKTİF SİPARİŞLER</div>
-          {% for order in table.orders.all %}
-            {% if order.status in 'PENDING,CONFIRMED,PREPARING' %}
+          {% for order in table.active_orders %}
             <div style="font-size:0.8rem; color:#c0392b; margin-bottom:0.25rem;">
               #{{ order.pk }} — {{ order.get_status_display }}
             </div>
-            {% endif %}
+          {% empty %}
+            <div style="font-size:0.8rem; color:#2c3e50; margin-bottom:0.25rem;">
+              Aktif sipariş yok.
+            </div>
           {% endfor %}
           
           <!-- MASA BOŞALTMA BUTONU -->
-          {% if not table.orders.filter(status__in='PENDING,CONFIRMED,PREPARING').exists %}
+          {% if not table.has_active_orders %}
           <form method="post" action="{% url 'web:table_clear' table.id %}" style="margin-top:0.75rem;">
             {% csrf_token %}
             <button type="submit" style="width:100%; border:1px solid #e74c3c; background:#fff; color:#e74c3c; padding:0.5rem; border-radius:6px; font-size:0.8rem; font-weight:600; cursor:pointer;" 
