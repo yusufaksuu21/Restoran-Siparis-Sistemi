@@ -1,33 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Menüyü Gör — KEBAP HOUSE{% endblock %}
-
-{% block content %}
-<div class="py-5" style="min-height: 70vh; display: flex; align-items: center; background: var(--cream);">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-8 text-center">
-        <div class="card shadow-sm p-4" style="border-radius: 15px;">
-          <h2 class="mb-3">Menüyü görmek için onaylayın</h2>
-          <p class="text-muted mb-4">Şu anda misafir modundasınız. Menü öğeleri ve fiyatlar gösterilecek, sepete ekleme yapmak için giriş yapabilirsiniz.</p>
-          <a href="{% url 'web:menu_list' %}?guest=1" class="btn btn-warning btn-lg">Menüyü Gör</a>
-          <div class="mt-4">
-            <a href="{% url 'web:login' %}" class="me-3">Giriş Yap</a>
-            <a href="{% url 'web:register' %}">Kayıt Ol</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-{% endblock %}
 {% block title %}Menüye Giriş — KEBAPHAUSE{% endblock %}
 
 {% block content %}
 <div class="py-5" style="background: var(--cream); min-height: 80vh; display:flex; align-items:center;">
   <div class="container">
     <div class="row justify-content-center">
-      <div class="col-lg-7 col-md-9">
+      <div class="col-lg-8 col-md-10">
         <div class="entry-card fade-up">
           <div class="entry-icon">🍽️</div>
           <div class="hero-badge d-inline-flex mb-3">KEBAPHAUSE RESTAURANT</div>
@@ -35,36 +14,59 @@
             Menüyü Görüntüle
           </h2>
           <p style="color:var(--text-light); margin-bottom:2.5rem; font-size:0.95rem;">
-            Sipariş vermek için giriş yapın veya kayıtsız olarak menümüzü inceleyin.
+            Sipariş vermek için masanızı seçin veya hesapsız olarak menümüzü inceleyin.
           </p>
 
-          <div class="row g-3 mb-3">
-            <div class="col-md-4">
-              <a href="{% url 'web:login' %}" class="entry-option">
-                <span class="entry-option-icon">🔑</span>
-                <div class="entry-option-title">Giriş Yap</div>
-                <div class="entry-option-desc">Hesabınla giriş yap, siparişlerini takip et</div>
-              </a>
+          <!-- MASAYA OTUR BAŞLIĞI -->
+          <div style="margin-bottom: 2.5rem;">
+            <div style="color:var(--navy); font-weight:800; font-size:1.1rem; margin-bottom:1.2rem; display:flex; align-items:center; gap:0.5rem;">
+              🪑 Masaya Otur
             </div>
-            <div class="col-md-4">
-              <a href="{% url 'web:register' %}" class="entry-option">
-                <span class="entry-option-icon">✨</span>
-                <div class="entry-option-title">Kayıt Ol</div>
-                <div class="entry-option-desc">Yeni hesap oluştur, avantajlardan faydalan</div>
-              </a>
-            </div>
-            <div class="col-md-4">
-              <a href="{% url 'web:menu_list' %}?guest=1" class="entry-option">
-                <span class="entry-option-icon">👀</span>
-                <div class="entry-option-title">Kayıtsız Devam</div>
-                <div class="entry-option-desc">Hesap açmadan menüyü görüntüle</div>
-              </a>
+            <div class="row g-2">
+              {% for table in tables %}
+              <div class="col-3 col-md-2">
+                <a href="{% url 'web:menu_list' %}?table={{ table.id }}&guest=1" 
+                   style="display:flex; flex-direction:column; align-items:center; justify-content:center; 
+                          background:var(--white); border:2px solid #ddd; border-radius:10px; padding:1.2rem; 
+                          text-decoration:none; transition:all 0.2s; color:var(--navy); font-weight:600; min-height:120px;"
+                   onmouseover="this.style.borderColor='var(--gold)'; this.style.boxShadow='0 4px 12px rgba(201, 168, 76, 0.2)'"
+                   onmouseout="this.style.borderColor='#ddd'; this.style.boxShadow='none'">
+                  <span style="font-size:1.8rem; margin-bottom:0.5rem;">🪑</span>
+                  <span style="font-size:1.1rem;">Masa {{ table.number }}</span>
+                  <span style="font-size:0.75rem; color:var(--text-light); margin-top:0.3rem;">{{ table.capacity }} kişi</span>
+                </a>
+              </div>
+              {% endfor %}
             </div>
           </div>
 
-          <p style="color:var(--text-light); font-size:0.82rem;">
-            💡 QR kodu okuttuysan direkt menüyü görüntüleyebilirsin.
-          </p>
+          <!-- DİĞER SEÇENEKLER -->
+          <div style="border-top:2px solid #eee; padding-top:2rem;">
+            <div style="color:var(--text-light); font-size:0.9rem; margin-bottom:1rem;">VEYA</div>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <a href="{% url 'web:login' %}" class="entry-option">
+                  <span class="entry-option-icon">🔑</span>
+                  <div class="entry-option-title">Giriş Yap</div>
+                  <div class="entry-option-desc">Hesabınla giriş yap, siparişlerini takip et</div>
+                </a>
+              </div>
+              <div class="col-md-4">
+                <a href="{% url 'web:register' %}" class="entry-option">
+                  <span class="entry-option-icon">✨</span>
+                  <div class="entry-option-title">Kayıt Ol</div>
+                  <div class="entry-option-desc">Yeni hesap oluştur, avantajlardan faydalan</div>
+                </a>
+              </div>
+              <div class="col-md-4">
+                <a href="{% url 'web:menu_list' %}?guest=1" class="entry-option">
+                  <span class="entry-option-icon">👀</span>
+                  <div class="entry-option-title">Kayıtsız Devam</div>
+                  <div class="entry-option-desc">Hesap açmadan menüyü görüntüle</div>
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
