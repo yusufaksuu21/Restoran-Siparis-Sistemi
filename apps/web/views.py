@@ -8,6 +8,7 @@ from django.urls import reverse_lazy
 from django.views.generic import TemplateView
 from apps.cart.models import Cart, CartItem
 from apps.menu.models import Category
+from apps.tables.models import Table
 from .forms import LoginForm, RegisterForm
 
 
@@ -67,7 +68,9 @@ def menu_view(request):
 
     is_guest_mode = request.session.get("guest_mode", False)
     if not request.user.is_authenticated and not is_guest_mode:
-        return render(request, "web/menu/entry.html")
+        tables = Table.objects.all().order_by("number")
+        return render(request, "web/menu/entry.html", {"tables": tables})
+
 
     categories = Category.objects.filter(is_active=True).prefetch_related("items")
 
@@ -221,12 +224,20 @@ def order_management_view(request):
     if request.method == "POST":
         order_id = request.POST.get("order_id")
         new_status = request.POST.get("status")
+        
         if order_id and new_status:
             order = Order.objects.filter(id=order_id).first()
             if order and new_status in [Order.Status.CONFIRMED, Order.Status.PREPARING, Order.Status.SERVED]:
                 if order.status not in [Order.Status.SERVED, Order.Status.CANCELLED]:
                     order.status = new_status
                     order.save(update_fields=["status"])
+                    
+                    # Sipariş onaylandığında/hazırlanıyor olursa ve masaya atanmışsa, masayı DOLU yap
+                    if new_status in [Order.Status.CONFIRMED, Order.Status.PREPARING] and order.table:
+                        if order.table.status != Table.Status.OCCUPIED:
+                            order.table.status = Table.Status.OCCUPIED
+                            order.table.save(update_fields=["status"])
+                            messages.success(request, f"Sipariş #{order.pk} Masa {order.table.number} olarak işaretlendi.")
                     
                     # Sipariş servis edildiğinde masa durumunu kontrol et
                     if new_status == Order.Status.SERVED and order.table:
@@ -238,7 +249,8 @@ def order_management_view(request):
                             order.table.status = Table.Status.AVAILABLE
                             order.table.save(update_fields=["status"])
                     
-                    messages.success(request, f"Sipariş #{order.pk} güncellendi.")
+                    if new_status != Order.Status.SERVED or not order.table:
+                        messages.success(request, f"Sipariş #{order.pk} güncellendi.")
                 else:
                     messages.error(request, "Bu siparişin durumu değiştirilemiyor.")
             else:
@@ -249,11 +261,57 @@ def order_management_view(request):
     return render(request, "web/admin_orders.html", {"orders": orders})
 
 
+
+@user_passes_test(lambda u: u.is_staff)
+def table_management_view(request):
+    from apps.orders.models import Order
+
+    tables = Table.objects.prefetch_related('orders').all()
+    for table in tables:
+        active_orders = table.orders.filter(
+            status__in=[
+                Order.Status.PENDING,
+                Order.Status.CONFIRMED,
+                Order.Status.PREPARING,
+            ]
+        )
+        table.active_orders = active_orders
+        table.has_active_orders = active_orders.exists()
+
+    return render(request, "web/admin_tables.html", {"tables": tables})
+
+
+@user_passes_test(lambda u: u.is_staff)
+def table_detail_view(request, table_id):
+    from apps.orders.models import Order
+
+    table = get_object_or_404(Table, id=table_id)
+
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        if new_status in [Table.Status.AVAILABLE, Table.Status.OCCUPIED, Table.Status.RESERVED, Table.Status.OUT_OF_SERVICE]:
+            # Masayı boş yaparken siparişleri de temizle
+            if new_status == Table.Status.AVAILABLE:
+                orders = table.orders.all()
+                order_count = orders.count()
+                orders.delete()
+                table.status = new_status
+                table.save(update_fields=["status"])
+                messages.success(request, f"Masa boşaltıldı. {order_count} sipariş silindi.")
+            else:
+                table.status = new_status
+                table.save(update_fields=["status"])
+                messages.success(request, f"Masa durumu '{table.get_status_display()}' olarak güncellendi.")
+        return redirect("web:admin_table_detail", table_id=table_id)
+
+    orders = table.orders.select_related('table').prefetch_related('items__menu_item').order_by('-created_at')
+    return render(request, "web/admin_table_detail.html", {"table": table, "orders": orders})
+
+
 @user_passes_test(lambda u: u.is_staff)
 def table_clear_view(request, table_id):
-    from apps.tables.models import Table
+    table = get_object_or_404(Table, id=table_id)
     if request.method == "POST":
-        table = get_object_or_404(Table, id=table_id)
         table.status = Table.Status.AVAILABLE
         table.save(update_fields=["status"])
         messages.success(request, f"Masa {table.number} boşaltıldı.")
@@ -336,9 +394,22 @@ def kitchen_view(request):
     if request.method == "POST":
         order_id = request.POST.get("order_id")
         new_status = request.POST.get("status")
+        table_id = request.POST.get("table_id")
+        
         if order_id and new_status:
             order = Order.objects.filter(id=order_id).first()
             if order and new_status in [Order.Status.CONFIRMED, Order.Status.PREPARING, Order.Status.SERVED]:
+                # Eğer masası yoksa ve masa seçildiyse, masayı ata
+                if not order.table and table_id:
+                    table = Table.objects.filter(id=table_id).first()
+                    if table:
+                        order.table = table
+                        order.save(update_fields=["table"])
+                        if table.status != Table.Status.OCCUPIED:
+                            table.status = Table.Status.OCCUPIED
+                            table.save(update_fields=["status"])
+                        messages.success(request, f"Sipariş #{order.pk} → Masa {table.number}")
+                
                 order.status = new_status
                 order.save(update_fields=["status"])
                 messages.success(request, f"Sipariş #{order.pk} → {order.get_status_display()}")
