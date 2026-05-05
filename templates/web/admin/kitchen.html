@@ -159,25 +159,16 @@
                     {% endfor %}
                   </div>
 
-                  <!-- TEK ADIM BUTON + MASA SEÇ -->
+                  {% if order.note %}
+                  <div style="background:#fff8ec; border-left:3px solid #f39c12; padding:0.65rem 0.85rem; border-radius:6px; margin-bottom:1rem; font-size:0.85rem; color:var(--text-mid);">
+                    📝 {{ order.note }}
+                  </div>
+                  {% endif %}
+
+                  <!-- TEK ADIM BUTON -->
                   <form method="post">
                     {% csrf_token %}
                     <input type="hidden" name="order_id" value="{{ order.pk }}">
-
-                    {% if not order.table %}
-                    <div style="margin-bottom:0.75rem;">
-                      <select name="table_id" style="width:100%; padding:0.6rem 0.75rem; border-radius:6px; border:2px solid #f39c12; font-size:0.9rem; font-weight:600; background:#fff; color:var(--navy);">
-                        <option value="">-- Masa Seç --</option>
-                        {% for table in all_tables %}
-                        <option value="{{ table.id }}">Masa {{ table.number }} ({{ table.capacity }} kişi)</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                    {% else %}
-                    <div style="background:#e8f5e9; padding:0.6rem 0.75rem; border-radius:6px; margin-bottom:0.75rem; font-size:0.9rem; font-weight:600; color:#1b5e20; text-align:center;">
-                      🪑 Masa {{ order.table.number }}
-                    </div>
-                    {% endif %}
 
                     {% if order.status == 'PENDING' %}
                       <button type="submit" name="status" value="CONFIRMED"
